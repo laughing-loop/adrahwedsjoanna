@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const MAX_UPLOAD_BYTES = 10_485_760;
@@ -28,6 +28,7 @@ function toCloudinaryThumb(secureUrl, resourceType) {
 
 export default function UploadManager({ user }) {
   const router = useRouter();
+  const fileInputRef = useRef(null);
   const [items, setItems] = useState([]);
   const [busy, setBusy] = useState(false);
   const [matchingBusy, setMatchingBusy] = useState(false);
@@ -75,7 +76,16 @@ export default function UploadManager({ user }) {
     setResults([]);
     setFailures([]);
 
-    if (!items.length) {
+    const submitItems = items.length
+      ? items
+      : Array.from(fileInputRef.current?.files || []).map((file, index) => ({
+          id: `${file.name}-${file.lastModified}-${index}`,
+          file,
+          resourceType: inferResourceType(file),
+          previewUrl: ""
+        }));
+
+    if (!submitItems.length) {
       setError("Please select at least one image or video.");
       return;
     }
@@ -85,7 +95,7 @@ export default function UploadManager({ user }) {
       const uploadedItems = [];
       const failedItems = [];
 
-      for (const item of items) {
+      for (const item of submitItems) {
         const file = item.file;
 
         if (file.size > MAX_UPLOAD_BYTES) {
@@ -147,9 +157,12 @@ export default function UploadManager({ user }) {
 
       setResults(uploadedItems);
       setFailures(failedItems);
-      items.forEach((entry) => {
+      submitItems.forEach((entry) => {
         if (entry.previewUrl) URL.revokeObjectURL(entry.previewUrl);
       });
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
       setItems([]);
       if (failedItems.length && !uploadedItems.length) {
         setError("No files were uploaded. See details below.");
@@ -182,6 +195,7 @@ export default function UploadManager({ user }) {
         <label>
           Select images or videos
           <input
+            ref={fileInputRef}
             type="file"
             multiple
             accept="image/*,video/*"
