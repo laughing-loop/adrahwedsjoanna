@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/find-my-photos/cron",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 8 * * *"
     }
   ]
 }
