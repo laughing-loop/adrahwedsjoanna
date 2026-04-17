@@ -112,6 +112,14 @@ export default function HomePage() {
         <p className="feature-note">
           AI photo matching will be activated after official wedding photos are uploaded.
         </p>
+        <div className="action-links">
+          <a className="action-link" href="/find-my-photos">
+            Start Find My Photos
+          </a>
+          <a className="action-link" href="/downloads/gallery-downloads-info.txt" target="_blank">
+            How Photo Access Works
+          </a>
+        </div>
       </section>
 
       <section className="block contacts">
