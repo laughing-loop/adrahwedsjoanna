@@ -1,0 +1,6 @@
+Wedding gallery downloads will be published here after official media curation.
+
+Planned guest features:
+- Download all approved event photos
+- Download your own matched photos (AI-assisted)
+- Access private media from invitation link
