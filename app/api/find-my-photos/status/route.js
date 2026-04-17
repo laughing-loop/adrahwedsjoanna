@@ -29,6 +29,30 @@ async function cloudinarySearch(expression) {
   return body.resources || [];
 }
 
+async function cloudinaryGetImageResource(publicId) {
+  const { cloudName, apiKey, apiSecret } = getCloudinaryConfig();
+  const auth = Buffer.from(`${apiKey}:${apiSecret}`).toString("base64");
+  const encodedPublicId = encodeURIComponent(publicId);
+
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${cloudName}/resources/image/upload/${encodedPublicId}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Basic ${auth}`
+      }
+    }
+  );
+
+  if (response.status === 404) return null;
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(body?.error?.message || body?.error || "Cloudinary resource lookup failed.");
+  }
+
+  return body;
+}
+
 export async function GET(request) {
   try {
     const requestId = request.nextUrl.searchParams.get("requestId") || "";
@@ -41,7 +65,14 @@ export async function GET(request) {
     const selfieExpressionByPublicId = `resource_type:image AND folder:adrah-joanna/find-my-photos/selfies AND public_id=${requestId}`;
     const selfieExpressionByTag = `resource_type:image AND folder:adrah-joanna/find-my-photos/selfies AND tags=request_${requestId}`;
 
-    let selfieMatches = await cloudinarySearch(selfieExpressionByContext);
+    let selfie = await cloudinaryGetImageResource(
+      `adrah-joanna/find-my-photos/selfies/${requestId}`
+    );
+    let selfieMatches = selfie ? [selfie] : [];
+
+    if (!selfieMatches.length) {
+      selfieMatches = await cloudinarySearch(selfieExpressionByContext);
+    }
     if (!selfieMatches.length) {
       selfieMatches = await cloudinarySearch(selfieExpressionByPublicId);
     }
@@ -52,7 +83,7 @@ export async function GET(request) {
     if (!selfieMatches.length) {
       return NextResponse.json({ status: "not_found", message: "Request not found." });
     }
-    const selfie = selfieMatches[0];
+    selfie = selfieMatches[0];
     const selfieTags = new Set(selfie.tags || []);
 
     const resultsExpression = `resource_type:image AND folder:adrah-joanna/find-my-photos/matches/${requestId}`;
