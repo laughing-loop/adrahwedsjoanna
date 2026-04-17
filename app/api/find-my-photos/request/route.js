@@ -31,7 +31,7 @@ export async function POST(request) {
     const timestamp = Math.floor(Date.now() / 1000);
     const folder = "adrah-joanna/find-my-photos/selfies";
     const publicId = requestId;
-    const tags = `find_my_photos,selfie_request,${findMyPhotosTags.REQUEST_TAG_PENDING}`;
+    const tags = `find_my_photos,selfie_request,${findMyPhotosTags.REQUEST_TAG_PENDING},request_${requestId}`;
     const context = `request_id=${requestId}|full_name=${fullName}|email=${email}`;
 
     const { cloudName, apiKey, apiSecret } = getCloudinaryConfig();

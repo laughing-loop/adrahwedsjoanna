@@ -36,8 +36,19 @@ export async function GET(request) {
       return NextResponse.json({ error: "Invalid request id." }, { status: 400 });
     }
 
-    const selfieExpression = `resource_type:image AND folder:adrah-joanna/find-my-photos/selfies AND public_id:${requestId}`;
-    const selfieMatches = await cloudinarySearch(selfieExpression);
+    // Prefer context-based lookup because it is stable even when public_id includes folder prefixes.
+    const selfieExpressionByContext = `resource_type:image AND folder:adrah-joanna/find-my-photos/selfies AND context.request_id=${requestId}`;
+    const selfieExpressionByPublicId = `resource_type:image AND folder:adrah-joanna/find-my-photos/selfies AND public_id=${requestId}`;
+    const selfieExpressionByTag = `resource_type:image AND folder:adrah-joanna/find-my-photos/selfies AND tags=request_${requestId}`;
+
+    let selfieMatches = await cloudinarySearch(selfieExpressionByContext);
+    if (!selfieMatches.length) {
+      selfieMatches = await cloudinarySearch(selfieExpressionByPublicId);
+    }
+    if (!selfieMatches.length) {
+      selfieMatches = await cloudinarySearch(selfieExpressionByTag);
+    }
+
     if (!selfieMatches.length) {
       return NextResponse.json({ status: "not_found", message: "Request not found." });
     }
