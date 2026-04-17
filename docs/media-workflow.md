@@ -26,10 +26,10 @@ Current implementation in this repo:
 - Automated matcher worker:
   - Manual trigger: `POST /api/find-my-photos/run` (authorized admin roles)
   - Scheduled trigger: `GET /api/find-my-photos/cron` (Vercel cron + `CRON_SECRET`)
-- Matching engine: AWS Rekognition `CompareFaces` against Cloudinary wedding image folder
+- Matching engine: CompreFace face verification against Cloudinary wedding image folder
 
 ## 4) Suggested stack for AI matching
 - Storage + delivery: Cloudinary
 - Metadata + auth: Supabase (Postgres + RLS)
-- Face matching: AWS Rekognition or Face API provider with explicit consent
+- Face matching: CompreFace (self-hosted, open-source)
 - Queue processing: serverless queue/worker for batch indexing

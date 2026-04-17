@@ -35,10 +35,10 @@ This project now includes:
 - scheduled trigger at `/api/find-my-photos/cron` via `vercel.json` (every 15 minutes)
 
 Set these environment variables in local and Vercel:
-- `AWS_REGION`
-- `AWS_ACCESS_KEY_ID`
-- `AWS_SECRET_ACCESS_KEY`
-- `FIND_MY_PHOTOS_SIMILARITY` (recommended `92`)
+- `COMPRE_FACE_BASE_URL`
+- `COMPRE_FACE_API_KEY`
+- `COMPRE_FACE_VERIFY_PATH` (default `/api/v1/verification/face`)
+- `FIND_MY_PHOTOS_SIMILARITY` (recommended `0.92`)
 - `CRON_SECRET` (must also be set in Vercel so cron calls are authorized)
 
 ## Deploy to Vercel
