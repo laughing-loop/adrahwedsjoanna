@@ -23,6 +23,10 @@ Current implementation in this repo:
 - Guest pages: `/find-my-photos` and `/find-my-photos/<requestId>`
 - Match publishing convention: upload matched images to folder
   `adrah-joanna/find-my-photos/matches/<requestId>`
+- Automated matcher worker:
+  - Manual trigger: `POST /api/find-my-photos/run` (authorized admin roles)
+  - Scheduled trigger: `GET /api/find-my-photos/cron` (Vercel cron + `CRON_SECRET`)
+- Matching engine: AWS Rekognition `CompareFaces` against Cloudinary wedding image folder
 
 ## 4) Suggested stack for AI matching
 - Storage + delivery: Cloudinary

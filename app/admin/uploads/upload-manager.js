@@ -30,9 +30,11 @@ export default function UploadManager({ user }) {
   const router = useRouter();
   const [items, setItems] = useState([]);
   const [busy, setBusy] = useState(false);
+  const [matchingBusy, setMatchingBusy] = useState(false);
   const [error, setError] = useState("");
   const [results, setResults] = useState([]);
   const [failures, setFailures] = useState([]);
+  const [jobMessage, setJobMessage] = useState("");
 
   useEffect(() => {
     return () => {
@@ -46,6 +48,25 @@ export default function UploadManager({ user }) {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/admin/login");
     router.refresh();
+  };
+
+  const runMatcherNow = async () => {
+    setError("");
+    setJobMessage("");
+    setMatchingBusy(true);
+    try {
+      const response = await fetch("/api/find-my-photos/run", { method: "POST" });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(body.error || "Could not run matcher.");
+      }
+
+      setJobMessage(`Matcher complete. Processed ${body.processedCount || 0} request(s).`);
+    } catch (runError) {
+      setError(runError.message || "Matcher failed.");
+    } finally {
+      setMatchingBusy(false);
+    }
   };
 
   const handleUpload = async (event) => {
@@ -146,10 +167,16 @@ export default function UploadManager({ user }) {
         <p>
           Signed in as <strong>{user.name || user.email}</strong> ({user.role})
         </p>
-        <button type="button" className="ghost-btn" onClick={handleLogout}>
-          Log Out
-        </button>
+        <div className="uploader-actions">
+          <button type="button" className="ghost-btn" onClick={runMatcherNow} disabled={matchingBusy}>
+            {matchingBusy ? "Running Matcher..." : "Run Matcher Now"}
+          </button>
+          <button type="button" className="ghost-btn" onClick={handleLogout}>
+            Log Out
+          </button>
+        </div>
       </div>
+      {jobMessage ? <p className="feature-note">{jobMessage}</p> : null}
 
       <form className="admin-form" onSubmit={handleUpload}>
         <label>

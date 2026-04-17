@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { getCloudinaryConfig, signCloudinaryParams } from "../../../../lib/cloudinary";
+import { findMyPhotosTags } from "../../../../lib/find-my-photos";
 
 const MAX_SELFIE_BYTES = 10_485_760;
 
@@ -30,7 +31,7 @@ export async function POST(request) {
     const timestamp = Math.floor(Date.now() / 1000);
     const folder = "adrah-joanna/find-my-photos/selfies";
     const publicId = requestId;
-    const tags = "find_my_photos,selfie_request";
+    const tags = `find_my_photos,selfie_request,${findMyPhotosTags.REQUEST_TAG_PENDING}`;
     const context = `request_id=${requestId}|full_name=${fullName}|email=${email}`;
 
     const { cloudName, apiKey, apiSecret } = getCloudinaryConfig();

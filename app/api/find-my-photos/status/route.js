@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCloudinaryConfig } from "../../../../lib/cloudinary";
+import { findMyPhotosTags } from "../../../../lib/find-my-photos";
 
 function isValidRequestId(value) {
   return /^fmp_[a-z0-9]{20}$/i.test(value);
@@ -40,11 +41,20 @@ export async function GET(request) {
     if (!selfieMatches.length) {
       return NextResponse.json({ status: "not_found", message: "Request not found." });
     }
+    const selfie = selfieMatches[0];
+    const selfieTags = new Set(selfie.tags || []);
 
     const resultsExpression = `resource_type:image AND folder:adrah-joanna/find-my-photos/matches/${requestId}`;
     const matchedImages = await cloudinarySearch(resultsExpression);
 
-    if (!matchedImages.length) {
+    if (selfieTags.has(findMyPhotosTags.REQUEST_TAG_NO_MATCH)) {
+      return NextResponse.json({
+        status: "no_match",
+        message: "We completed the scan but found no matches yet. Try again after more photos are uploaded."
+      });
+    }
+
+    if (!matchedImages.length && !selfieTags.has(findMyPhotosTags.REQUEST_TAG_READY)) {
       return NextResponse.json({
         status: "processing",
         message:
