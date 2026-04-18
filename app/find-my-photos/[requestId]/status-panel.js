@@ -11,7 +11,10 @@ async function fetchStatus(requestId) {
   });
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(body.error || "Unable to fetch request status.");
+    const error = new Error(body.error || "Unable to fetch request status.");
+    error.status = response.status;
+    error.retryAt = body.retryAt || null;
+    throw error;
   }
   return body;
 }
@@ -21,6 +24,11 @@ function formatDateTime(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "n/a";
   return date.toLocaleString();
+}
+
+function getRetryAtTimestamp(retryAt) {
+  const parsed = Date.parse(retryAt || "");
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function formatElapsed(ageMinutes) {
@@ -65,6 +73,7 @@ export default function StatusPanel({ requestId }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [checkedAt, setCheckedAt] = useState(null);
+  const [rateLimitedUntil, setRateLimitedUntil] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -72,8 +81,15 @@ export default function StatusPanel({ requestId }) {
       const body = await fetchStatus(requestId);
       setData(body);
       setError("");
+      setRateLimitedUntil(null);
       setCheckedAt(new Date());
     } catch (statusError) {
+      const retryAt = getRetryAtTimestamp(statusError.retryAt);
+      if (statusError.status === 429 && retryAt && retryAt > Date.now()) {
+        setRateLimitedUntil(retryAt);
+      } else {
+        setRateLimitedUntil(null);
+      }
       setError(statusError.message || "Status check failed.");
     } finally {
       setLoading(false);
@@ -90,9 +106,15 @@ export default function StatusPanel({ requestId }) {
       return undefined;
     }
 
+    if (rateLimitedUntil && rateLimitedUntil > Date.now()) {
+      const delay = Math.max(1000, rateLimitedUntil - Date.now() + 1000);
+      const retryTimer = window.setTimeout(load, delay);
+      return () => window.clearTimeout(retryTimer);
+    }
+
     const timer = window.setInterval(load, POLL_INTERVAL_MS);
     return () => window.clearInterval(timer);
-  }, [data?.status, load]);
+  }, [data?.status, load, rateLimitedUntil]);
 
   const status = data?.status || "queued";
   const tone = getStatusTone(status);
@@ -177,6 +199,12 @@ export default function StatusPanel({ requestId }) {
           </li>
         ))}
       </ol>
+      {rateLimitedUntil ? (
+        <p className="feature-note">
+          Auto-refresh is paused due to Cloudinary API limits and will resume at{" "}
+          {new Date(rateLimitedUntil).toLocaleString()}.
+        </p>
+      ) : null}
       <p className="feature-note">
         Auto-refresh runs every {Math.round(POLL_INTERVAL_MS / 1000)} seconds. Scheduled matching
         runs once daily on this deployment. Ask the admin to run matcher now from the upload

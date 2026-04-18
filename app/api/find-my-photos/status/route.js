@@ -171,8 +171,8 @@ export async function GET(request) {
       return NextResponse.json(
         {
           error: retryAt
-            ? `Cloudinary API rate limit reached. Please retry after ${retryAt}.`
-            : "Cloudinary API rate limit reached. Please retry later.",
+            ? `Cloudinary API limit reached. Try again after ${retryAt}.`
+            : "Cloudinary API limit reached. Try again later.",
           retryAt
         },
         { status: 429 }
