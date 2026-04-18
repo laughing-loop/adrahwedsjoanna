@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fff8ef" />
+      <stop offset="100%" stop-color="#edf2d7" />
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="52" fill="url(#g)" />
+  <rect x="8" y="8" width="240" height="240" rx="52" fill="none" stroke="#c6cb9e" stroke-width="5" />
+  <text
+    x="128"
+    y="118"
+    text-anchor="middle"
+    fill="#747b2c"
+    font-size="88"
+    font-weight="600"
+    font-family="Georgia, 'Times New Roman', serif"
+  >
+    AJ
+  </text>
+  <text
+    x="128"
+    y="170"
+    text-anchor="middle"
+    fill="#747b2c"
+    font-size="37"
+    letter-spacing="6"
+    font-family="'Segoe UI', sans-serif"
+  >
+    26
+  </text>
+  <path d="M66 182h124" stroke="#747b2c" stroke-width="4" stroke-linecap="round" opacity="0.7" />
+</svg>

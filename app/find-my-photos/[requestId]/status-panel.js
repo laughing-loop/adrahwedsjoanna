@@ -39,6 +39,16 @@ function formatElapsed(ageMinutes) {
   return `${hours}h ${minutes}m`;
 }
 
+function formatCountdown(ms) {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(
+    seconds
+  ).padStart(2, "0")}`;
+}
+
 function getStatusTone(status) {
   if (status === "ready") return "good";
   if (status === "no_match") return "warn";
@@ -74,19 +84,12 @@ export default function StatusPanel({ requestId }) {
   const [loading, setLoading] = useState(false);
   const [checkedAt, setCheckedAt] = useState(null);
   const [rateLimitedUntil, setRateLimitedUntil] = useState(null);
+  const [nextAutoRefreshAt, setNextAutoRefreshAt] = useState(null);
   const [nowTs, setNowTs] = useState(Date.now());
   const isRateLimited = Boolean(rateLimitedUntil && rateLimitedUntil > nowTs);
   const remainingRateLimitMs = isRateLimited ? rateLimitedUntil - nowTs : 0;
-
-  const formatCountdown = (ms) => {
-    const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(
-      seconds
-    ).padStart(2, "0")}`;
-  };
+  const hasUpcomingAutoRefresh = Boolean(nextAutoRefreshAt && nextAutoRefreshAt > nowTs);
+  const remainingAutoRefreshMs = hasUpcomingAutoRefresh ? nextAutoRefreshAt - nowTs : 0;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -96,12 +99,19 @@ export default function StatusPanel({ requestId }) {
       setError("");
       setRateLimitedUntil(null);
       setCheckedAt(new Date());
+      if (TERMINAL_STATUSES.has(body.status)) {
+        setNextAutoRefreshAt(null);
+      } else {
+        setNextAutoRefreshAt(Date.now() + POLL_INTERVAL_MS);
+      }
     } catch (statusError) {
       const retryAt = getRetryAtTimestamp(statusError.retryAt);
       if (statusError.status === 429 && retryAt && retryAt > Date.now()) {
         setRateLimitedUntil(retryAt);
+        setNextAutoRefreshAt(retryAt);
       } else {
         setRateLimitedUntil(null);
+        setNextAutoRefreshAt(null);
       }
       setError(statusError.message || "Status check failed.");
     } finally {
@@ -116,24 +126,30 @@ export default function StatusPanel({ requestId }) {
   useEffect(() => {
     const status = data?.status;
     if (status && TERMINAL_STATUSES.has(status)) {
+      setNextAutoRefreshAt(null);
       return undefined;
     }
 
     if (rateLimitedUntil && rateLimitedUntil > Date.now()) {
       const delay = Math.max(1000, rateLimitedUntil - Date.now() + 1000);
+      setNextAutoRefreshAt(Date.now() + delay);
       const retryTimer = window.setTimeout(load, delay);
       return () => window.clearTimeout(retryTimer);
     }
 
-    const timer = window.setInterval(load, POLL_INTERVAL_MS);
+    setNextAutoRefreshAt(Date.now() + POLL_INTERVAL_MS);
+    const timer = window.setInterval(() => {
+      setNextAutoRefreshAt(Date.now() + POLL_INTERVAL_MS);
+      load();
+    }, POLL_INTERVAL_MS);
     return () => window.clearInterval(timer);
   }, [data?.status, load, rateLimitedUntil]);
 
   useEffect(() => {
-    if (!isRateLimited) return undefined;
+    if (!isRateLimited && !hasUpcomingAutoRefresh) return undefined;
     const timer = window.setInterval(() => setNowTs(Date.now()), 1000);
     return () => window.clearInterval(timer);
-  }, [isRateLimited]);
+  }, [hasUpcomingAutoRefresh, isRateLimited]);
 
   const status = data?.status || "queued";
   const tone = getStatusTone(status);
@@ -147,11 +163,16 @@ export default function StatusPanel({ requestId }) {
   if (!data && error) {
     return (
       <div className="fmp-status-panel">
-        <p className="admin-error">{error}</p>
+        <p className="admin-alert admin-alert-error">{error}</p>
         {isRateLimited ? (
           <p className="feature-note">
             Auto-refresh is paused and will resume in {formatCountdown(remainingRateLimitMs)} (at{" "}
             {new Date(rateLimitedUntil).toLocaleString()}).
+          </p>
+        ) : null}
+        {hasUpcomingAutoRefresh && !isRateLimited ? (
+          <p className="feature-note">
+            Next automatic check in {formatCountdown(remainingAutoRefreshMs)}.
           </p>
         ) : null}
         <button
@@ -188,11 +209,19 @@ export default function StatusPanel({ requestId }) {
                 : "Refresh"}
           </button>
         </div>
-        <p>{data.message || "Your matched photos are ready."}</p>
-        <p className="feature-note">
-          Submitted: {formatDateTime(data.submittedAt)} | Last checked:{" "}
-          {checkedAt ? checkedAt.toLocaleTimeString() : "n/a"}
+        <p className={`fmp-status-copy fmp-status-copy-${tone}`}>
+          {data.message || "Your matched photos are ready."}
         </p>
+        <div className="fmp-meta">
+          <span>Submitted: {formatDateTime(data.submittedAt)}</span>
+          <span>Elapsed: {formatElapsed(data.ageMinutes)}</span>
+          <span>Last checked: {checkedAt ? checkedAt.toLocaleTimeString() : "n/a"}</span>
+        </div>
+        {hasUpcomingAutoRefresh && !isRateLimited ? (
+          <p className="feature-note">
+            Next automatic check in {formatCountdown(remainingAutoRefreshMs)}.
+          </p>
+        ) : null}
 
         <div className="upload-results">
           <h2>Your Matched Photos ({data.images.length})</h2>
@@ -214,8 +243,17 @@ export default function StatusPanel({ requestId }) {
   if (status === "not_found") {
     return (
       <div className="fmp-status-panel">
-        <p>We could not find this request yet.</p>
+        <div className="fmp-status-header">
+          <span className={`fmp-badge fmp-badge-${tone}`}>{statusLabel}</span>
+          <button type="button" className="ghost-btn" onClick={load} disabled={loading}>
+            {loading ? "Refreshing..." : "Refresh"}
+          </button>
+        </div>
+        <p className={`fmp-status-copy fmp-status-copy-${tone}`}>We could not find this request yet.</p>
         <p className="feature-note">Please verify the link or submit a new selfie request.</p>
+        <a className="action-link" href="/find-my-photos">
+          Start New Request
+        </a>
       </div>
     );
   }
@@ -237,8 +275,10 @@ export default function StatusPanel({ requestId }) {
               : "Refresh"}
         </button>
       </div>
-      {error ? <p className="admin-error">{error}</p> : null}
-      <p>{data?.message || "Your request is being processed."}</p>
+      {error ? <p className="admin-alert admin-alert-error">{error}</p> : null}
+      <p className={`fmp-status-copy fmp-status-copy-${tone}`}>
+        {data?.message || "Your request is being processed."}
+      </p>
       <div className="fmp-meta">
         <span>Submitted: {formatDateTime(data?.submittedAt)}</span>
         <span>Elapsed: {formatElapsed(data?.ageMinutes)}</span>
@@ -255,6 +295,11 @@ export default function StatusPanel({ requestId }) {
         <p className="feature-note">
           Auto-refresh is paused due to Cloudinary API limits and will resume at{" "}
           {new Date(rateLimitedUntil).toLocaleString()} ({formatCountdown(remainingRateLimitMs)}).
+        </p>
+      ) : null}
+      {hasUpcomingAutoRefresh && !isRateLimited ? (
+        <p className="feature-note">
+          Next automatic check in {formatCountdown(remainingAutoRefreshMs)}.
         </p>
       ) : null}
       <p className="feature-note">

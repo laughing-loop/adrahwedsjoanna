@@ -16,7 +16,12 @@ const body = Plus_Jakarta_Sans({
 export const metadata = {
   title: "Joanna & Innocent | Wedding Invitation",
   description:
-    "Together with our families, we invite you to celebrate our wedding at Anyinam."
+    "Together with our families, we invite you to celebrate our wedding at Anyinam.",
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg"
+  }
 };
 
 export default function RootLayout({ children }) {

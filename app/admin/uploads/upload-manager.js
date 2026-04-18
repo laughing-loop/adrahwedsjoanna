@@ -18,6 +18,23 @@ function formatBytes(bytes) {
   return `${mb.toFixed(2)} MB`;
 }
 
+function formatCountdown(ms) {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(
+    seconds
+  ).padStart(2, "0")}`;
+}
+
+function formatLocalTime(value) {
+  if (!value) return "n/a";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "n/a";
+  return date.toLocaleString();
+}
+
 function isRateLimitMessage(message) {
   return /rate limit exceeded|api limit reached/i.test(String(message || ""));
 }
@@ -59,18 +76,15 @@ export default function UploadManager({ user }) {
   const [jobMessage, setJobMessage] = useState("");
   const [matcherFailures, setMatcherFailures] = useState([]);
   const [matcherSummary, setMatcherSummary] = useState(null);
+  const [lastMatcherRunAt, setLastMatcherRunAt] = useState(null);
   const isRateLimited = Boolean(rateLimitedUntil && rateLimitedUntil > nowTs);
   const remainingRateLimitMs = isRateLimited ? rateLimitedUntil - nowTs : 0;
-
-  const formatCountdown = (ms) => {
-    const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(
-      seconds
-    ).padStart(2, "0")}`;
-  };
+  const selectedBytes = items.reduce((total, item) => total + item.file.size, 0);
+  const selectedImageCount = items.reduce(
+    (count, item) => count + (item.resourceType === "image" ? 1 : 0),
+    0
+  );
+  const selectedVideoCount = items.length - selectedImageCount;
 
   const parseRetryAtTimestamp = (value) => {
     const extracted = extractRateLimitReset(value);
@@ -78,10 +92,54 @@ export default function UploadManager({ user }) {
     return Number.isFinite(parsed) ? parsed : null;
   };
 
+  const revokePreview = (entry) => {
+    if (entry?.previewUrl) {
+      URL.revokeObjectURL(entry.previewUrl);
+    }
+  };
+
+  const clearSelections = () => {
+    setItems((currentItems) => {
+      currentItems.forEach(revokePreview);
+      return [];
+    });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const removeSelection = (id) => {
+    setItems((currentItems) =>
+      currentItems.filter((entry) => {
+        if (entry.id === id) {
+          revokePreview(entry);
+          return false;
+        }
+        return true;
+      })
+    );
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleFileSelection = (event) => {
+    const nextFiles = Array.from(event.target.files || []);
+    setItems((currentItems) => {
+      currentItems.forEach(revokePreview);
+      return nextFiles.map((file, index) => ({
+        id: `${file.name}-${file.lastModified}-${index}`,
+        file,
+        resourceType: inferResourceType(file),
+        previewUrl: URL.createObjectURL(file)
+      }));
+    });
+  };
+
   useEffect(() => {
     return () => {
       items.forEach((item) => {
-        if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+        revokePreview(item);
       });
     };
   }, [items]);
@@ -122,6 +180,7 @@ export default function UploadManager({ user }) {
       const pendingCount = body.pendingCount || 0;
       const galleryCount = body.galleryCount || 0;
       setRateLimitedUntil(null);
+      setLastMatcherRunAt(Date.now());
       setMatcherSummary({ processedCount, failedCount, pendingCount, galleryCount });
       setMatcherFailures(Array.isArray(body.failed) ? body.failed : []);
       if (failedCount > 0) {
@@ -245,13 +304,7 @@ export default function UploadManager({ user }) {
 
       setResults(uploadedItems);
       setFailures(failedItems);
-      submitItems.forEach((entry) => {
-        if (entry.previewUrl) URL.revokeObjectURL(entry.previewUrl);
-      });
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-      setItems([]);
+      clearSelections();
       if (failedItems.length && !uploadedItems.length) {
         setError("No files were uploaded. See details below.");
       }
@@ -265,9 +318,14 @@ export default function UploadManager({ user }) {
   return (
     <div className="uploader-wrap">
       <div className="uploader-meta">
-        <p>
-          Signed in as <strong>{user.name || user.email}</strong> ({user.role})
-        </p>
+        <div className="uploader-identity">
+          <p>
+            Signed in as <strong>{user.name || user.email}</strong> ({user.role})
+          </p>
+          <p className="feature-note">
+            Upload media, run matching on demand, and track issues from one dashboard.
+          </p>
+        </div>
         <div className="uploader-actions">
           <button
             type="button"
@@ -286,17 +344,49 @@ export default function UploadManager({ user }) {
           </button>
         </div>
       </div>
+
+      <div className="admin-stat-grid">
+        <article className="admin-stat-card">
+          <span className="admin-stat-label">Selected Files</span>
+          <strong>{items.length}</strong>
+          <small>
+            {selectedImageCount} image(s), {selectedVideoCount} video(s)
+          </small>
+        </article>
+        <article className="admin-stat-card">
+          <span className="admin-stat-label">Selection Size</span>
+          <strong>{formatBytes(selectedBytes)}</strong>
+          <small>Max per file: {formatBytes(MAX_UPLOAD_BYTES)}</small>
+        </article>
+        <article className="admin-stat-card">
+          <span className="admin-stat-label">Uploaded This Session</span>
+          <strong>{results.length}</strong>
+          <small>{failures.length} failed</small>
+        </article>
+        <article className="admin-stat-card">
+          <span className="admin-stat-label">Last Matcher Run</span>
+          <strong>{lastMatcherRunAt ? formatLocalTime(lastMatcherRunAt) : "Not run yet"}</strong>
+          <small>
+            {matcherSummary
+              ? `Scanned ${matcherSummary.pendingCount} pending request(s)`
+              : "Run matcher to check queue health"}
+          </small>
+        </article>
+      </div>
+
       {isRateLimited ? (
-        <p className="feature-note">
+        <p className="admin-alert admin-alert-warn">
           Cloudinary API limit is active. Actions are disabled and will re-enable in{" "}
-          {formatCountdown(remainingRateLimitMs)} (at {new Date(rateLimitedUntil).toLocaleString()}).
+          <strong>{formatCountdown(remainingRateLimitMs)}</strong> (at{" "}
+          {new Date(rateLimitedUntil).toLocaleString()}).
         </p>
       ) : null}
-      {jobMessage ? <p className="feature-note">{jobMessage}</p> : null}
+      {jobMessage ? <p className="admin-alert admin-alert-info">{jobMessage}</p> : null}
+      {error ? <p className="admin-alert admin-alert-error">{error}</p> : null}
       {matcherSummary ? (
         <p className="feature-note">
           Pending selfies scanned: {matcherSummary.pendingCount}. Gallery images considered:{" "}
-          {matcherSummary.galleryCount}.
+          {matcherSummary.galleryCount}. Processed {matcherSummary.processedCount} request(s).
         </p>
       ) : null}
       {matcherFailures.length ? (
@@ -322,7 +412,7 @@ export default function UploadManager({ user }) {
         </div>
       ) : null}
 
-      <form className="admin-form" onSubmit={handleUpload}>
+      <form className="admin-form uploader-form" onSubmit={handleUpload}>
         <label>
           Select images or videos
           <input
@@ -331,22 +421,26 @@ export default function UploadManager({ user }) {
             multiple
             accept="image/*,video/*"
             disabled={busy || isRateLimited}
-            onChange={(event) => {
-              const nextFiles = Array.from(event.target.files || []);
-              setItems((currentItems) => {
-                currentItems.forEach((entry) => {
-                  if (entry.previewUrl) URL.revokeObjectURL(entry.previewUrl);
-                });
-                return nextFiles.map((file, index) => ({
-                  id: `${file.name}-${file.lastModified}-${index}`,
-                  file,
-                  resourceType: inferResourceType(file),
-                  previewUrl: URL.createObjectURL(file)
-                }));
-              });
-            }}
+            onChange={handleFileSelection}
           />
         </label>
+        <div className="selection-toolbar">
+          <p className="field-hint">
+            {items.length
+              ? `Ready: ${items.length} file(s) • ${formatBytes(selectedBytes)} total`
+              : "Select one or many files. You can remove individual files before upload."}
+          </p>
+          <div className="selection-actions">
+            <button
+              type="button"
+              className="ghost-btn compact-btn"
+              onClick={clearSelections}
+              disabled={!items.length || busy}
+            >
+              Clear Selection
+            </button>
+          </div>
+        </div>
         {items.length ? (
           <div className="preview-grid">
             {items.map((item) => (
@@ -360,11 +454,18 @@ export default function UploadManager({ user }) {
                   <strong>{item.file.name}</strong>
                   <span>{formatBytes(item.file.size)}</span>
                 </figcaption>
+                <button
+                  type="button"
+                  className="ghost-btn compact-btn"
+                  onClick={() => removeSelection(item.id)}
+                  disabled={busy}
+                >
+                  Remove
+                </button>
               </figure>
             ))}
           </div>
         ) : null}
-        {error ? <p className="admin-error">{error}</p> : null}
         <button type="submit" disabled={busy || isRateLimited}>
           {isRateLimited
             ? `Upload Blocked (${formatCountdown(remainingRateLimitMs)})`

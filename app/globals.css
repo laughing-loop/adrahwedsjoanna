@@ -299,7 +299,7 @@ a {
   min-height: 100svh;
   display: grid;
   place-items: center;
-  padding: 1.4rem;
+  padding: 1.4rem 1rem;
   background:
     radial-gradient(circle at 12% 10%, #fff4ea 0%, transparent 34%),
     radial-gradient(circle at 85% 18%, #eff3da 0%, transparent 36%),
@@ -307,9 +307,11 @@ a {
 }
 
 .admin-card {
-  width: min(760px, 100%);
+  width: min(920px, 100%);
   border: 1px solid var(--line);
-  padding: 1.3rem;
+  border-radius: 10px;
+  padding: 1.35rem;
+  box-shadow: 0 16px 30px rgba(103, 108, 72, 0.07);
   background: #fffefc;
 }
 
@@ -324,9 +326,51 @@ a {
   color: #5a603e;
 }
 
+.wizard-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.wizard-intro {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.wizard-intro p {
+  margin: 0;
+  color: #5a603e;
+}
+
+.wizard-steps-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.wizard-steps-list li {
+  border: 1px solid #dfe3c5;
+  background: linear-gradient(165deg, #fffef9, #f4f7e6);
+  padding: 0.7rem;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.wizard-steps-list strong {
+  font-size: 0.85rem;
+  color: #545b35;
+}
+
+.wizard-steps-list span {
+  font-size: 0.8rem;
+  color: #6b7050;
+}
+
 .admin-form {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.85rem;
 }
 
 .admin-form label {
@@ -358,6 +402,7 @@ a {
   padding: 0.6rem 0.7rem;
   font: inherit;
   background: #ffffff;
+  min-width: 0;
 }
 
 .admin-form button,
@@ -368,6 +413,7 @@ a {
   padding: 0.62rem 0.9rem;
   font: inherit;
   cursor: pointer;
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
 }
 
 .ghost-btn {
@@ -375,10 +421,118 @@ a {
   color: #636943;
 }
 
+.ghost-btn:hover {
+  background: #747b2c;
+  color: #fffef9;
+  border-color: #747b2c;
+}
+
+.compact-btn {
+  padding: 0.38rem 0.62rem;
+  font-size: 0.82rem;
+}
+
 .admin-form button:disabled,
 .ghost-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.admin-error {
+  margin: 0;
+  color: #a02f23;
+}
+
+.admin-alert {
+  margin: 0;
+  border: 1px solid #d3d7b9;
+  background: #f7f8ee;
+  color: #4f5532;
+  padding: 0.6rem 0.7rem;
+  font-size: 0.9rem;
+}
+
+.admin-alert-info {
+  border-color: #d3d7b9;
+  background: #f5f6e9;
+}
+
+.admin-alert-warn {
+  border-color: #dcc48b;
+  background: #fff5de;
+  color: #6f551f;
+}
+
+.admin-alert-error {
+  border-color: #d9a49f;
+  background: #fff0ed;
+  color: #91342a;
+}
+
+.wizard-form {
+  gap: 1rem;
+}
+
+.wizard-panel {
+  border: 1px solid #e3e5d0;
+  background: #fffefb;
+  padding: 0.85rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.wizard-panel h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.wizard-step-label {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  color: #707650;
+}
+
+.form-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.file-preview-card {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  border: 1px solid #e4e7d2;
+  padding: 0.5rem;
+  background: #ffffff;
+}
+
+.file-preview-card img {
+  width: 66px;
+  height: 66px;
+  object-fit: cover;
+  border: 1px solid #dfe3c5;
+  display: block;
+}
+
+.file-preview-card div {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.file-preview-card strong {
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-preview-card span {
+  font-size: 0.78rem;
+  color: #666b47;
 }
 
 .preview-grid {
@@ -422,21 +576,32 @@ a {
   color: #666b47;
 }
 
+.preview-card .ghost-btn {
+  margin: 0 0.5rem 0.55rem;
+}
+
 .uploader-wrap {
   display: grid;
-  gap: 1rem;
+  gap: 1.05rem;
 }
 
 .uploader-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 1fr auto;
   gap: 0.8rem;
+  align-items: center;
 }
 
 .uploader-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.uploader-identity {
+  display: grid;
+  gap: 0.25rem;
 }
 
 .uploader-meta p {
@@ -444,9 +609,58 @@ a {
   font-size: 0.92rem;
 }
 
-.admin-error {
+.admin-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.admin-stat-card {
+  border: 1px solid #dfe3c5;
+  background: linear-gradient(160deg, #fffef9, #f4f7e6);
+  padding: 0.62rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.admin-stat-label {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.68rem;
+  color: #707650;
+}
+
+.admin-stat-card strong {
+  font-size: 0.97rem;
+  line-height: 1.2;
+  color: #474d2d;
+  word-break: break-word;
+}
+
+.admin-stat-card small {
+  font-size: 0.76rem;
+  color: #636943;
+}
+
+.uploader-form {
+  gap: 0.95rem;
+}
+
+.selection-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.selection-toolbar p {
   margin: 0;
-  color: #a02f23;
+}
+
+.selection-actions {
+  display: flex;
+  gap: 0.5rem;
 }
 
 .upload-results {
@@ -508,7 +722,10 @@ a {
 
 .fmp-status-panel {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.8rem;
+  border: 1px solid #e2e5ce;
+  background: #fffefc;
+  padding: 0.95rem;
 }
 
 .fmp-status-header {
@@ -553,24 +770,72 @@ a {
   border-color: #d39b92;
 }
 
+.fmp-status-copy {
+  margin: 0;
+  border: 1px solid #d8dcc0;
+  background: #f8f9ef;
+  padding: 0.58rem 0.68rem;
+  color: #53593a;
+}
+
+.fmp-status-copy-pending {
+  border-color: #d8dcc0;
+  background: #f8f9ef;
+  color: #53593a;
+}
+
+.fmp-status-copy-good {
+  border-color: #9fcaa5;
+  background: #ebf6ea;
+  color: #2f5d34;
+}
+
+.fmp-status-copy-warn {
+  border-color: #dbc088;
+  background: #fff6de;
+  color: #6f551f;
+}
+
+.fmp-status-copy-bad {
+  border-color: #d7a39d;
+  background: #fff0ee;
+  color: #8d342b;
+}
+
 .fmp-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem 1rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
   font-size: 0.86rem;
   color: #5d6241;
 }
 
+.fmp-meta span {
+  border: 1px solid #e2e5ce;
+  padding: 0.44rem 0.54rem;
+  background: #fcfdf7;
+}
+
 .fmp-steps {
   margin: 0;
-  padding-left: 1.15rem;
+  padding: 0;
+  list-style: none;
   display: grid;
-  gap: 0.35rem;
+  gap: 0.4rem;
   color: #666b47;
 }
 
+.fmp-steps li {
+  border: 1px dashed #cfd5ad;
+  background: #f7f8ed;
+  padding: 0.45rem 0.6rem;
+}
+
 .fmp-steps li.done {
-  color: #355f39;
+  border-style: solid;
+  border-color: #9ac29d;
+  background: #eaf5e8;
+  color: #2f5d34;
 }
 
 @keyframes rise {
@@ -595,6 +860,20 @@ a {
 }
 
 
+@media (max-width: 920px) {
+  .admin-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wizard-steps-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .fmp-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 760px) {
   .hero {
     min-height: 64svh;
@@ -618,12 +897,40 @@ a {
   .gallery-grid,
   .action-links,
   .contact-grid,
-  .preview-grid,
   .results-grid {
     grid-template-columns: 1fr;
   }
 
-  .uploader-meta,
+  .preview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-card {
+    padding: 1rem;
+  }
+
+  .wizard-steps-list,
+  .form-split,
+  .admin-stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .uploader-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .uploader-actions {
+    justify-content: stretch;
+  }
+
+  .uploader-actions .ghost-btn,
+  .selection-actions .ghost-btn,
+  .fmp-status-header .ghost-btn,
+  .admin-form button {
+    width: 100%;
+  }
+
+  .selection-toolbar,
   .upload-results li {
     flex-direction: column;
     align-items: flex-start;
@@ -631,11 +938,28 @@ a {
 
   .uploader-actions {
     width: 100%;
-    flex-direction: column;
   }
 
   .fmp-meta {
-    flex-direction: column;
-    gap: 0.3rem;
+    grid-template-columns: 1fr;
+  }
+
+  .fmp-status-panel {
+    padding: 0.75rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .preview-grid,
+  .results-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-card h1 {
+    font-size: 2.1rem;
+  }
+
+  .wizard-panel h2 {
+    font-size: 1.18rem;
   }
 }

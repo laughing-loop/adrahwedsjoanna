@@ -26,12 +26,14 @@ export default function UploadsPage() {
 
   return (
     <main className="admin-shell">
-      <section className="admin-card">
-        <h1>Media Uploads</h1>
-        <p>
-          Signed uploads go directly to Cloudinary, optimized for fast delivery on the wedding
-          site.
-        </p>
+      <section className="admin-card admin-uploads-card">
+        <div className="wizard-intro">
+          <h1>Media Uploads</h1>
+          <p>
+            Signed uploads go directly to Cloudinary, optimized for fast delivery on the wedding
+            site.
+          </p>
+        </div>
         <UploadManager user={session} />
       </section>
     </main>
