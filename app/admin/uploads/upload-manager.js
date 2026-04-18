@@ -36,6 +36,8 @@ export default function UploadManager({ user }) {
   const [results, setResults] = useState([]);
   const [failures, setFailures] = useState([]);
   const [jobMessage, setJobMessage] = useState("");
+  const [matcherFailures, setMatcherFailures] = useState([]);
+  const [matcherSummary, setMatcherSummary] = useState(null);
 
   useEffect(() => {
     return () => {
@@ -54,6 +56,8 @@ export default function UploadManager({ user }) {
   const runMatcherNow = async () => {
     setError("");
     setJobMessage("");
+    setMatcherFailures([]);
+    setMatcherSummary(null);
     setMatchingBusy(true);
     try {
       const response = await fetch("/api/find-my-photos/run", { method: "POST" });
@@ -64,6 +68,10 @@ export default function UploadManager({ user }) {
 
       const processedCount = body.processedCount || 0;
       const failedCount = body.failedCount || 0;
+      const pendingCount = body.pendingCount || 0;
+      const galleryCount = body.galleryCount || 0;
+      setMatcherSummary({ processedCount, failedCount, pendingCount, galleryCount });
+      setMatcherFailures(Array.isArray(body.failed) ? body.failed : []);
       if (failedCount > 0) {
         setJobMessage(
           `Matcher finished with issues. Processed ${processedCount} request(s), failed ${failedCount}.`
@@ -198,6 +206,34 @@ export default function UploadManager({ user }) {
         </div>
       </div>
       {jobMessage ? <p className="feature-note">{jobMessage}</p> : null}
+      {matcherSummary ? (
+        <p className="feature-note">
+          Pending selfies scanned: {matcherSummary.pendingCount}. Gallery images considered:{" "}
+          {matcherSummary.galleryCount}.
+        </p>
+      ) : null}
+      {matcherFailures.length ? (
+        <div className="upload-results">
+          <h2>Matcher Failure Details</h2>
+          <ul>
+            {matcherFailures.map((item, index) => (
+              <li key={`${item.requestId || "unknown"}-${index}`} className="matcher-failure-row">
+                <span>
+                  <strong>Request:</strong> {item.requestId || "unknown"}
+                </span>
+                <span>
+                  <strong>Reason:</strong> {item.error || "Unknown matching failure."}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="feature-note">
+            If the reason mentions CompreFace config, verify `COMPRE_FACE_BASE_URL`,
+            `COMPRE_FACE_API_KEY`, and `COMPRE_FACE_VERIFY_PATH` in Vercel project environment
+            variables.
+          </p>
+        </div>
+      ) : null}
 
       <form className="admin-form" onSubmit={handleUpload}>
         <label>
