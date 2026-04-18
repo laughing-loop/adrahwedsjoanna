@@ -25,7 +25,7 @@ Current implementation in this repo:
   `adrah-joanna/find-my-photos/matches/<requestId>`
 - Automated matcher worker:
   - Manual trigger: `POST /api/find-my-photos/run` (authorized admin roles)
-  - Scheduled trigger: `GET /api/find-my-photos/cron` (Vercel cron; use `CRON_SECRET` for stronger auth)
+  - Scheduled trigger: `GET /api/find-my-photos/cron` (daily on Vercel Hobby; use `CRON_SECRET` for stronger auth)
 - Matching engine: CompreFace face verification against Cloudinary wedding image folder
 
 ## 4) Suggested stack for AI matching

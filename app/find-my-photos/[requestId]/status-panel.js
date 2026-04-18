@@ -177,8 +177,9 @@ export default function StatusPanel({ requestId }) {
         </p>
       ) : null}
       <p className="feature-note">
-        Auto-refresh runs every {Math.round(POLL_INTERVAL_MS / 1000)} seconds. If this stays queued
-        for over 20 minutes, ask the admin to run matcher now from the upload dashboard.
+        Auto-refresh runs every {Math.round(POLL_INTERVAL_MS / 1000)} seconds. Scheduled matching
+        runs once daily on this deployment. Ask the admin to run matcher now from the upload
+        dashboard for faster results.
       </p>
     </div>
   );

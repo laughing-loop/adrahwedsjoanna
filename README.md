@@ -32,7 +32,7 @@ This project now includes:
 - guest request intake at `/find-my-photos`
 - automatic status page at `/find-my-photos/<requestId>`
 - admin trigger at `/api/find-my-photos/run`
-- scheduled trigger at `/api/find-my-photos/cron` via `vercel.json` (every 15 minutes)
+- scheduled trigger at `/api/find-my-photos/cron` via `vercel.json` (daily on Vercel Hobby)
 
 Set these environment variables in local and Vercel:
 - `COMPRE_FACE_BASE_URL`

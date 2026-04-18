@@ -161,7 +161,7 @@ export async function GET(request) {
     return NextResponse.json({
       status: "queued",
       message:
-        "Your request is in queue. Matching runs automatically every 15 minutes while new wedding photos are processed.",
+        "Your request is in queue. Matching runs automatically once daily on this deployment, or sooner if the admin runs matcher manually.",
       ...timing,
       hasGalleryImages: galleryProbe.length > 0
     });

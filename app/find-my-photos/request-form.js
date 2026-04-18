@@ -101,8 +101,8 @@ export default function RequestForm() {
         </span>
       </label>
       <p className="feature-note">
-        Matching runs automatically every 15 minutes. You will be redirected to a live status page
-        after submission.
+        Matching runs automatically once daily on this site. For faster results, the admin can run
+        matcher manually after new gallery uploads.
       </p>
       {error ? <p className="admin-error">{error}</p> : null}
       <button type="submit" disabled={busy}>
