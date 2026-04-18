@@ -4,7 +4,6 @@ import { findMyPhotosTags } from "../../../../lib/find-my-photos";
 
 const SELFIES_FOLDER = "adrah-joanna/find-my-photos/selfies";
 const MATCHES_FOLDER_ROOT = "adrah-joanna/find-my-photos/matches";
-const GALLERY_FOLDER = "adrah-joanna/wedding-images";
 
 function isValidRequestId(value) {
   return /^fmp_[a-z0-9]{20}$/i.test(value);
@@ -72,6 +71,15 @@ function buildTimingMeta(selfie) {
   };
 }
 
+function isCloudinaryRateLimitMessage(message) {
+  return /rate limit exceeded/i.test(String(message || ""));
+}
+
+function extractRetryAt(message) {
+  const match = String(message || "").match(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} UTC/i);
+  return match ? match[0] : null;
+}
+
 export async function GET(request) {
   try {
     const requestId = request.nextUrl.searchParams.get("requestId") || "";
@@ -79,23 +87,13 @@ export async function GET(request) {
       return NextResponse.json({ error: "Invalid request id." }, { status: 400 });
     }
 
-    // Prefer context-based lookup because it is stable even when public_id includes folder prefixes.
-    const selfieExpressionByContext = `resource_type:image AND folder:${SELFIES_FOLDER} AND context.request_id=${requestId}`;
-    const selfieExpressionByPublicId = `resource_type:image AND folder:${SELFIES_FOLDER} AND public_id=${requestId}`;
-    const selfieExpressionByTag = `resource_type:image AND folder:${SELFIES_FOLDER} AND tags=request_${requestId}`;
-
     let selfie = await cloudinaryGetImageResource(`${SELFIES_FOLDER}/${requestId}`);
-    let selfieMatches = selfie ? [selfie] : [];
-
-    if (!selfieMatches.length) {
-      selfieMatches = await cloudinarySearch(selfieExpressionByContext);
-    }
-    if (!selfieMatches.length) {
-      selfieMatches = await cloudinarySearch(selfieExpressionByPublicId);
-    }
-    if (!selfieMatches.length) {
-      selfieMatches = await cloudinarySearch(selfieExpressionByTag);
-    }
+    const selfieMatches = selfie
+      ? [selfie]
+      : await cloudinarySearch(
+          `resource_type:image AND folder:${SELFIES_FOLDER} AND tags=request_${requestId}`,
+          1
+        );
 
     if (!selfieMatches.length) {
       return NextResponse.json({ status: "not_found", message: "Request not found." });
@@ -103,11 +101,6 @@ export async function GET(request) {
     selfie = selfieMatches[0];
     const selfieTags = new Set(selfie.tags || []);
     const timing = buildTimingMeta(selfie);
-
-    const [matchedImages, galleryProbe] = await Promise.all([
-      cloudinarySearch(`resource_type:image AND folder:${MATCHES_FOLDER_ROOT}/${requestId}`),
-      cloudinarySearch(`resource_type:image AND folder:${GALLERY_FOLDER}`, 1)
-    ]);
 
     if (selfieTags.has(findMyPhotosTags.REQUEST_TAG_NO_MATCH)) {
       return NextResponse.json({
@@ -117,17 +110,43 @@ export async function GET(request) {
       });
     }
 
-    if (matchedImages.length) {
+    if (selfieTags.has(findMyPhotosTags.REQUEST_TAG_ERROR)) {
       return NextResponse.json({
-        status: "ready",
-        message: `Your matched photos are ready (${matchedImages.length}).`,
-        ...timing,
-        images: matchedImages.map((item) => ({
-          secureUrl: item.secure_url,
-          thumbUrl: item.secure_url?.replace("/upload/", "/upload/f_auto,q_auto,w_800,c_limit/"),
-          publicId: item.public_id
-        }))
+        status: "retrying",
+        message:
+          "We hit a temporary processing issue, but your request will retry automatically on the next matcher run.",
+        ...timing
       });
+    }
+
+    if (selfieTags.has(findMyPhotosTags.REQUEST_TAG_PROCESSING)) {
+      return NextResponse.json({
+        status: "matching",
+        message: "Your selfie is being compared against wedding photos now.",
+        ...timing
+      });
+    }
+
+    if (
+      selfieTags.has(findMyPhotosTags.REQUEST_TAG_READY) ||
+      selfieTags.has(findMyPhotosTags.REQUEST_TAG_PENDING)
+    ) {
+      const matchedImages = await cloudinarySearch(
+        `resource_type:image AND folder:${MATCHES_FOLDER_ROOT}/${requestId}`
+      );
+
+      if (matchedImages.length) {
+        return NextResponse.json({
+          status: "ready",
+          message: `Your matched photos are ready (${matchedImages.length}).`,
+          ...timing,
+          images: matchedImages.map((item) => ({
+            secureUrl: item.secure_url,
+            thumbUrl: item.secure_url?.replace("/upload/", "/upload/f_auto,q_auto,w_800,c_limit/"),
+            publicId: item.public_id
+          }))
+        });
+      }
     }
 
     if (selfieTags.has(findMyPhotosTags.REQUEST_TAG_READY)) {
@@ -139,35 +158,29 @@ export async function GET(request) {
       });
     }
 
-    if (selfieTags.has(findMyPhotosTags.REQUEST_TAG_ERROR)) {
-      return NextResponse.json({
-        status: "retrying",
-        message:
-          "We hit a temporary processing issue, but your request will retry automatically on the next matcher run.",
-        ...timing,
-        hasGalleryImages: galleryProbe.length > 0
-      });
-    }
-
-    if (selfieTags.has(findMyPhotosTags.REQUEST_TAG_PROCESSING)) {
-      return NextResponse.json({
-        status: "matching",
-        message: "Your selfie is being compared against wedding photos now.",
-        ...timing,
-        hasGalleryImages: galleryProbe.length > 0
-      });
-    }
-
     return NextResponse.json({
       status: "queued",
       message:
         "Your request is in queue. Matching runs automatically once daily on this deployment, or sooner if the admin runs matcher manually.",
-      ...timing,
-      hasGalleryImages: galleryProbe.length > 0
+      ...timing
     });
   } catch (error) {
+    const message = error?.message || "Unable to fetch request status.";
+    if (isCloudinaryRateLimitMessage(message)) {
+      const retryAt = extractRetryAt(message);
+      return NextResponse.json(
+        {
+          error: retryAt
+            ? `Cloudinary API rate limit reached. Please retry after ${retryAt}.`
+            : "Cloudinary API rate limit reached. Please retry later.",
+          retryAt
+        },
+        { status: 429 }
+      );
+    }
+
     return NextResponse.json(
-      { error: error.message || "Unable to fetch request status." },
+      { error: message },
       { status: 500 }
     );
   }

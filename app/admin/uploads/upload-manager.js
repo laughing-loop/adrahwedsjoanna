@@ -18,6 +18,25 @@ function formatBytes(bytes) {
   return `${mb.toFixed(2)} MB`;
 }
 
+function isRateLimitMessage(message) {
+  return /rate limit exceeded|api limit reached/i.test(String(message || ""));
+}
+
+function extractRateLimitReset(message) {
+  const match = String(message || "").match(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} UTC/i);
+  return match ? match[0] : null;
+}
+
+function normalizeProviderError(message) {
+  const raw = String(message || "Upload failed.");
+  if (!isRateLimitMessage(raw)) return raw;
+  const resetAt = extractRateLimitReset(raw);
+  if (resetAt) {
+    return `Cloudinary API limit reached. Try again after ${resetAt}.`;
+  }
+  return "Cloudinary API limit reached. Try again later.";
+}
+
 function toCloudinaryThumb(secureUrl, resourceType) {
   if (!secureUrl?.includes("/upload/")) return secureUrl;
   if (resourceType === "video") {
@@ -63,7 +82,7 @@ export default function UploadManager({ user }) {
       const response = await fetch("/api/find-my-photos/run", { method: "POST" });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error(body.error || "Could not run matcher.");
+        throw new Error(normalizeProviderError(body.error || "Could not run matcher."));
       }
 
       const processedCount = body.processedCount || 0;
@@ -80,7 +99,7 @@ export default function UploadManager({ user }) {
         setJobMessage(`Matcher complete. Processed ${processedCount} request(s).`);
       }
     } catch (runError) {
-      setError(runError.message || "Matcher failed.");
+      setError(normalizeProviderError(runError.message || "Matcher failed."));
     } finally {
       setMatchingBusy(false);
     }
@@ -154,7 +173,7 @@ export default function UploadManager({ user }) {
           if (!uploadResponse.ok) {
             const providerMessage =
               uploadBody?.error?.message || uploadBody?.error || "Upload failed.";
-            throw new Error(providerMessage);
+            throw new Error(normalizeProviderError(providerMessage));
           }
 
           uploadedItems.push({
@@ -164,10 +183,15 @@ export default function UploadManager({ user }) {
             resourceType: uploadBody.resource_type || resourceType
           });
         } catch (fileError) {
+          const reason = normalizeProviderError(fileError.message || "Upload failed.");
           failedItems.push({
             name: file.name,
-            reason: fileError.message || "Upload failed."
+            reason
           });
+          if (isRateLimitMessage(reason)) {
+            setError(reason);
+            break;
+          }
         }
       }
 
@@ -184,7 +208,7 @@ export default function UploadManager({ user }) {
         setError("No files were uploaded. See details below.");
       }
     } catch (uploadError) {
-      setError(uploadError.message || "Upload failed.");
+      setError(normalizeProviderError(uploadError.message || "Upload failed."));
     } finally {
       setBusy(false);
     }

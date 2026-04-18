@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-const POLL_INTERVAL_MS = 8000;
+const POLL_INTERVAL_MS = 60000;
+const TERMINAL_STATUSES = new Set(["ready", "no_match", "not_found"]);
 
 async function fetchStatus(requestId) {
   const response = await fetch(`/api/find-my-photos/status?requestId=${requestId}`, {
@@ -81,11 +82,17 @@ export default function StatusPanel({ requestId }) {
 
   useEffect(() => {
     load();
-    const timer = window.setInterval(load, POLL_INTERVAL_MS);
-    return () => {
-      window.clearInterval(timer);
-    };
   }, [load]);
+
+  useEffect(() => {
+    const status = data?.status;
+    if (status && TERMINAL_STATUSES.has(status)) {
+      return undefined;
+    }
+
+    const timer = window.setInterval(load, POLL_INTERVAL_MS);
+    return () => window.clearInterval(timer);
+  }, [data?.status, load]);
 
   const status = data?.status || "queued";
   const tone = getStatusTone(status);
@@ -170,12 +177,6 @@ export default function StatusPanel({ requestId }) {
           </li>
         ))}
       </ol>
-      {data?.hasGalleryImages === false ? (
-        <p className="feature-note">
-          Wedding gallery is still empty, so matching cannot start until photos are uploaded by the
-          admin team.
-        </p>
-      ) : null}
       <p className="feature-note">
         Auto-refresh runs every {Math.round(POLL_INTERVAL_MS / 1000)} seconds. Scheduled matching
         runs once daily on this deployment. Ask the admin to run matcher now from the upload
