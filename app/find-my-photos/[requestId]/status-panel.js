@@ -74,6 +74,19 @@ export default function StatusPanel({ requestId }) {
   const [loading, setLoading] = useState(false);
   const [checkedAt, setCheckedAt] = useState(null);
   const [rateLimitedUntil, setRateLimitedUntil] = useState(null);
+  const [nowTs, setNowTs] = useState(Date.now());
+  const isRateLimited = Boolean(rateLimitedUntil && rateLimitedUntil > nowTs);
+  const remainingRateLimitMs = isRateLimited ? rateLimitedUntil - nowTs : 0;
+
+  const formatCountdown = (ms) => {
+    const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(
+      seconds
+    ).padStart(2, "0")}`;
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -116,6 +129,12 @@ export default function StatusPanel({ requestId }) {
     return () => window.clearInterval(timer);
   }, [data?.status, load, rateLimitedUntil]);
 
+  useEffect(() => {
+    if (!isRateLimited) return undefined;
+    const timer = window.setInterval(() => setNowTs(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [isRateLimited]);
+
   const status = data?.status || "queued";
   const tone = getStatusTone(status);
   const statusLabel = getStatusLabel(status);
@@ -129,8 +148,23 @@ export default function StatusPanel({ requestId }) {
     return (
       <div className="fmp-status-panel">
         <p className="admin-error">{error}</p>
-        <button type="button" className="ghost-btn" onClick={load} disabled={loading}>
-          {loading ? "Refreshing..." : "Try Again"}
+        {isRateLimited ? (
+          <p className="feature-note">
+            Auto-refresh is paused and will resume in {formatCountdown(remainingRateLimitMs)} (at{" "}
+            {new Date(rateLimitedUntil).toLocaleString()}).
+          </p>
+        ) : null}
+        <button
+          type="button"
+          className="ghost-btn"
+          onClick={load}
+          disabled={loading || isRateLimited}
+        >
+          {isRateLimited
+            ? `Try Again In ${formatCountdown(remainingRateLimitMs)}`
+            : loading
+              ? "Refreshing..."
+              : "Try Again"}
         </button>
       </div>
     );
@@ -141,8 +175,17 @@ export default function StatusPanel({ requestId }) {
       <div className="fmp-status-panel">
         <div className="fmp-status-header">
           <span className={`fmp-badge fmp-badge-${tone}`}>{statusLabel}</span>
-          <button type="button" className="ghost-btn" onClick={load} disabled={loading}>
-            {loading ? "Refreshing..." : "Refresh"}
+          <button
+            type="button"
+            className="ghost-btn"
+            onClick={load}
+            disabled={loading || isRateLimited}
+          >
+            {isRateLimited
+              ? `Refresh In ${formatCountdown(remainingRateLimitMs)}`
+              : loading
+                ? "Refreshing..."
+                : "Refresh"}
           </button>
         </div>
         <p>{data.message || "Your matched photos are ready."}</p>
@@ -181,8 +224,17 @@ export default function StatusPanel({ requestId }) {
     <div className="fmp-status-panel">
       <div className="fmp-status-header">
         <span className={`fmp-badge fmp-badge-${tone}`}>{statusLabel}</span>
-        <button type="button" className="ghost-btn" onClick={load} disabled={loading}>
-          {loading ? "Refreshing..." : "Refresh"}
+        <button
+          type="button"
+          className="ghost-btn"
+          onClick={load}
+          disabled={loading || isRateLimited}
+        >
+          {isRateLimited
+            ? `Refresh In ${formatCountdown(remainingRateLimitMs)}`
+            : loading
+              ? "Refreshing..."
+              : "Refresh"}
         </button>
       </div>
       {error ? <p className="admin-error">{error}</p> : null}
@@ -202,7 +254,7 @@ export default function StatusPanel({ requestId }) {
       {rateLimitedUntil ? (
         <p className="feature-note">
           Auto-refresh is paused due to Cloudinary API limits and will resume at{" "}
-          {new Date(rateLimitedUntil).toLocaleString()}.
+          {new Date(rateLimitedUntil).toLocaleString()} ({formatCountdown(remainingRateLimitMs)}).
         </p>
       ) : null}
       <p className="feature-note">

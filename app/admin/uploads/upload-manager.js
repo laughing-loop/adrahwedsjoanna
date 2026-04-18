@@ -51,12 +51,32 @@ export default function UploadManager({ user }) {
   const [items, setItems] = useState([]);
   const [busy, setBusy] = useState(false);
   const [matchingBusy, setMatchingBusy] = useState(false);
+  const [nowTs, setNowTs] = useState(Date.now());
+  const [rateLimitedUntil, setRateLimitedUntil] = useState(null);
   const [error, setError] = useState("");
   const [results, setResults] = useState([]);
   const [failures, setFailures] = useState([]);
   const [jobMessage, setJobMessage] = useState("");
   const [matcherFailures, setMatcherFailures] = useState([]);
   const [matcherSummary, setMatcherSummary] = useState(null);
+  const isRateLimited = Boolean(rateLimitedUntil && rateLimitedUntil > nowTs);
+  const remainingRateLimitMs = isRateLimited ? rateLimitedUntil - nowTs : 0;
+
+  const formatCountdown = (ms) => {
+    const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(
+      seconds
+    ).padStart(2, "0")}`;
+  };
+
+  const parseRetryAtTimestamp = (value) => {
+    const extracted = extractRateLimitReset(value);
+    const parsed = Date.parse(extracted || value || "");
+    return Number.isFinite(parsed) ? parsed : null;
+  };
 
   useEffect(() => {
     return () => {
@@ -66,6 +86,12 @@ export default function UploadManager({ user }) {
     };
   }, [items]);
 
+  useEffect(() => {
+    if (!isRateLimited) return undefined;
+    const timer = window.setInterval(() => setNowTs(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [isRateLimited]);
+
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/admin/login");
@@ -73,6 +99,7 @@ export default function UploadManager({ user }) {
   };
 
   const runMatcherNow = async () => {
+    if (isRateLimited) return;
     setError("");
     setJobMessage("");
     setMatcherFailures([]);
@@ -82,13 +109,19 @@ export default function UploadManager({ user }) {
       const response = await fetch("/api/find-my-photos/run", { method: "POST" });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error(normalizeProviderError(body.error || "Could not run matcher."));
+        const normalized = normalizeProviderError(body.error || "Could not run matcher.");
+        const retryTs = parseRetryAtTimestamp(body.retryAt || body.error || normalized);
+        if (response.status === 429 && retryTs && retryTs > Date.now()) {
+          setRateLimitedUntil(retryTs);
+        }
+        throw new Error(normalized);
       }
 
       const processedCount = body.processedCount || 0;
       const failedCount = body.failedCount || 0;
       const pendingCount = body.pendingCount || 0;
       const galleryCount = body.galleryCount || 0;
+      setRateLimitedUntil(null);
       setMatcherSummary({ processedCount, failedCount, pendingCount, galleryCount });
       setMatcherFailures(Array.isArray(body.failed) ? body.failed : []);
       if (failedCount > 0) {
@@ -99,7 +132,12 @@ export default function UploadManager({ user }) {
         setJobMessage(`Matcher complete. Processed ${processedCount} request(s).`);
       }
     } catch (runError) {
-      setError(normalizeProviderError(runError.message || "Matcher failed."));
+      const normalized = normalizeProviderError(runError.message || "Matcher failed.");
+      const retryTs = parseRetryAtTimestamp(normalized);
+      if (retryTs && retryTs > Date.now()) {
+        setRateLimitedUntil(retryTs);
+      }
+      setError(normalized);
     } finally {
       setMatchingBusy(false);
     }
@@ -107,6 +145,12 @@ export default function UploadManager({ user }) {
 
   const handleUpload = async (event) => {
     event.preventDefault();
+    if (isRateLimited) {
+      setError(
+        `Cloudinary API limit reached. Try again after ${new Date(rateLimitedUntil).toUTCString()}.`
+      );
+      return;
+    }
     setError("");
     setResults([]);
     setFailures([]);
@@ -189,6 +233,10 @@ export default function UploadManager({ user }) {
             reason
           });
           if (isRateLimitMessage(reason)) {
+            const retryTs = parseRetryAtTimestamp(reason);
+            if (retryTs && retryTs > Date.now()) {
+              setRateLimitedUntil(retryTs);
+            }
             setError(reason);
             break;
           }
@@ -221,14 +269,29 @@ export default function UploadManager({ user }) {
           Signed in as <strong>{user.name || user.email}</strong> ({user.role})
         </p>
         <div className="uploader-actions">
-          <button type="button" className="ghost-btn" onClick={runMatcherNow} disabled={matchingBusy}>
-            {matchingBusy ? "Running Matcher..." : "Run Matcher Now"}
+          <button
+            type="button"
+            className="ghost-btn"
+            onClick={runMatcherNow}
+            disabled={matchingBusy || isRateLimited}
+          >
+            {isRateLimited
+              ? `Run Matcher Blocked (${formatCountdown(remainingRateLimitMs)})`
+              : matchingBusy
+                ? "Running Matcher..."
+                : "Run Matcher Now"}
           </button>
           <button type="button" className="ghost-btn" onClick={handleLogout}>
             Log Out
           </button>
         </div>
       </div>
+      {isRateLimited ? (
+        <p className="feature-note">
+          Cloudinary API limit is active. Actions are disabled and will re-enable in{" "}
+          {formatCountdown(remainingRateLimitMs)} (at {new Date(rateLimitedUntil).toLocaleString()}).
+        </p>
+      ) : null}
       {jobMessage ? <p className="feature-note">{jobMessage}</p> : null}
       {matcherSummary ? (
         <p className="feature-note">
@@ -267,6 +330,7 @@ export default function UploadManager({ user }) {
             type="file"
             multiple
             accept="image/*,video/*"
+            disabled={busy || isRateLimited}
             onChange={(event) => {
               const nextFiles = Array.from(event.target.files || []);
               setItems((currentItems) => {
@@ -301,8 +365,12 @@ export default function UploadManager({ user }) {
           </div>
         ) : null}
         {error ? <p className="admin-error">{error}</p> : null}
-        <button type="submit" disabled={busy}>
-          {busy ? "Uploading..." : "Upload to Cloudinary"}
+        <button type="submit" disabled={busy || isRateLimited}>
+          {isRateLimited
+            ? `Upload Blocked (${formatCountdown(remainingRateLimitMs)})`
+            : busy
+              ? "Uploading..."
+              : "Upload to Cloudinary"}
         </button>
       </form>
 

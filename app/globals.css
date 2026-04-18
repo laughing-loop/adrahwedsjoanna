@@ -375,6 +375,12 @@ a {
   color: #636943;
 }
 
+.admin-form button:disabled,
+.ghost-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .preview-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
