@@ -517,6 +517,59 @@ a {
   color: #515632;
 }
 
+.site-footer {
+  text-align: center;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 2.4rem;
+  background:
+    linear-gradient(170deg, rgba(250, 247, 238, 0.78), rgba(239, 243, 221, 0.52));
+}
+
+.site-footer-est {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: 0.73rem;
+  color: #6a7050;
+}
+
+.site-footer-scripture {
+  margin: 0.8rem auto 0;
+  width: min(640px, 100%);
+  display: grid;
+  gap: 0.72rem;
+}
+
+.site-footer-scripture p {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 1.75;
+  font-size: clamp(0.8rem, 1.35vw, 0.98rem);
+  color: #4d5432;
+}
+
+.site-footer-scripture cite {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #7d8335;
+  font-size: 0.78rem;
+}
+
+.site-footer-scripture cite::before,
+.site-footer-scripture cite::after {
+  content: "";
+  width: 32px;
+  height: 1px;
+  background: #a5ab64;
+}
+
 .admin-shell {
   min-height: 100svh;
   display: grid;
@@ -1336,6 +1389,15 @@ a {
 
   .gallery-lightbox-nav {
     display: none;
+  }
+
+  .site-footer {
+    padding-bottom: 2rem;
+  }
+
+  .site-footer-scripture p {
+    letter-spacing: 0.06em;
+    line-height: 1.68;
   }
 }
 

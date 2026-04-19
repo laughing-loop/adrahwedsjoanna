@@ -154,6 +154,17 @@ export default function HomePage() {
         <h2>Reception to Follow</h2>
         <p>@ ATIWA ONE LODGE</p>
       </section>
+
+      <footer className="site-footer block watermark-surface">
+        <p className="site-footer-est">Est. 2026</p>
+        <blockquote className="site-footer-scripture">
+          <p>
+            Then Jehovah God said: &quot;It is not good for the man to continue to be alone.
+            I am going to make a helper for him, as a complement of him.&quot;
+          </p>
+          <cite>Genesis 2:18</cite>
+        </blockquote>
+      </footer>
     </main>
   );
 }
