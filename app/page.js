@@ -5,15 +5,35 @@ import galleryOne from "../images/Whisk_2d0bc804c7d5702883f41847f0c5f751eg.png";
 import galleryTwo from "../images/Whisk_8199943798532ebbade41a18f03b6eb5eg.png";
 import galleryThree from "../images/Whisk_8199943798532ebbade41a18f03b6eb5egq.png";
 import galleryFour from "../images/Whisk_969957481a18e29901b4b58abbf802fbdr.jpeg";
-import monogram from "../images/A-J_Monogram-01.svg";
 import elementBg from "../images/A-J_ELEMENT_BACKGROUND-02.svg";
+import GalleryLightbox from "./shared/gallery-lightbox";
 import ShareInviteButton from "./shared/share-invite-button";
 
 const galleryItems = [
-  { src: galleryOne, alt: "Joanna and Innocent pre-wedding portrait one" },
-  { src: galleryTwo, alt: "Joanna and Innocent pre-wedding portrait two" },
-  { src: galleryThree, alt: "Joanna and Innocent pre-wedding portrait three" },
-  { src: galleryFour, alt: "Joanna and Innocent pre-wedding portrait four" }
+  {
+    src: galleryOne.src,
+    width: galleryOne.width,
+    height: galleryOne.height,
+    alt: "Joanna and Innocent pre-wedding portrait one"
+  },
+  {
+    src: galleryTwo.src,
+    width: galleryTwo.width,
+    height: galleryTwo.height,
+    alt: "Joanna and Innocent pre-wedding portrait two"
+  },
+  {
+    src: galleryThree.src,
+    width: galleryThree.width,
+    height: galleryThree.height,
+    alt: "Joanna and Innocent pre-wedding portrait three"
+  },
+  {
+    src: galleryFour.src,
+    width: galleryFour.width,
+    height: galleryFour.height,
+    alt: "Joanna and Innocent pre-wedding portrait four"
+  }
 ];
 
 export default function HomePage() {
@@ -35,20 +55,21 @@ export default function HomePage() {
       <div className="hero-glow hero-glow-right" aria-hidden />
 
       <header className="hero">
-        <Image
-          className="monogram-mark"
-          src={monogram}
-          alt="Joanna and Innocent monogram"
-          priority
-        />
-        <p className="lead">Together with our families, invite you to our wedding</p>
         <h1 className="hero-title">
-          <span className="hero-first-names">Innocent &amp; Joanna</span>
-          <span className="hero-surnames">ADRAH &amp; NYOMEDZI FIATI</span>
+          <span className="hero-person">
+            <span className="hero-first-name">Innocent</span>
+            <span className="hero-surname">ADRAH</span>
+          </span>
+          <span className="hero-divider">and</span>
+          <span className="hero-person">
+            <span className="hero-first-name">Joanna</span>
+            <span className="hero-surname">NYOMEDZI FIATI</span>
+          </span>
         </h1>
+        <p className="lead">Together with our families, invite you to our wedding</p>
         <p className="hero-meta">30 May 2026 | 1:00 PM</p>
         <ShareInviteButton />
-        <figure className="hero-image-wrap">
+        <figure className="hero-image-wrap watermark-surface">
           <Image
             className="hero-image"
             src={heroImage}
@@ -75,15 +96,9 @@ export default function HomePage() {
       <section className="block gallery">
         <div className="section-top">
           <h2>Gallery</h2>
-          <p>Pre-wedding shoots and memorable moments</p>
+          <p>Tap any image to open, then swipe to view more</p>
         </div>
-        <div className="gallery-grid">
-          {galleryItems.map((item) => (
-            <figure key={item.alt} className="gallery-item">
-              <Image src={item.src} alt={item.alt} className="gallery-image" />
-            </figure>
-          ))}
-        </div>
+        <GalleryLightbox items={galleryItems} />
       </section>
 
       <section className="block">

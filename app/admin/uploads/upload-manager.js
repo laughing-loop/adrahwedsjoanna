@@ -427,7 +427,7 @@ export default function UploadManager({ user }) {
         <div className="selection-toolbar">
           <p className="field-hint">
             {items.length
-              ? `Ready: ${items.length} file(s) • ${formatBytes(selectedBytes)} total`
+              ? `Ready: ${items.length} file(s) - ${formatBytes(selectedBytes)} total`
               : "Select one or many files. You can remove individual files before upload."}
           </p>
           <div className="selection-actions">
@@ -445,11 +445,13 @@ export default function UploadManager({ user }) {
           <div className="preview-grid">
             {items.map((item) => (
               <figure key={item.id} className="preview-card">
-                {item.resourceType === "image" ? (
-                  <img src={item.previewUrl} alt={item.file.name} loading="lazy" />
-                ) : (
-                  <video src={item.previewUrl} muted playsInline preload="metadata" />
-                )}
+                <div className="preview-media watermark-surface">
+                  {item.resourceType === "image" ? (
+                    <img src={item.previewUrl} alt={item.file.name} loading="lazy" decoding="async" />
+                  ) : (
+                    <video src={item.previewUrl} muted playsInline preload="metadata" />
+                  )}
+                </div>
                 <figcaption>
                   <strong>{item.file.name}</strong>
                   <span>{formatBytes(item.file.size)}</span>
@@ -481,11 +483,13 @@ export default function UploadManager({ user }) {
           <ul className="results-grid">
             {results.map((item) => (
               <li key={item.secureUrl}>
-                {item.resourceType === "image" ? (
-                  <img src={item.thumbUrl} alt={item.name} loading="lazy" />
-                ) : (
-                  <img src={item.thumbUrl} alt={item.name} loading="lazy" />
-                )}
+                <div className="result-media watermark-surface">
+                  {item.resourceType === "image" ? (
+                    <img src={item.thumbUrl} alt={item.name} loading="lazy" decoding="async" />
+                  ) : (
+                    <img src={item.thumbUrl} alt={item.name} loading="lazy" decoding="async" />
+                  )}
+                </div>
                 <span className="result-name">{item.name}</span>
                 <a href={item.secureUrl} target="_blank" rel="noreferrer">
                   Open
@@ -512,3 +516,4 @@ export default function UploadManager({ user }) {
     </div>
   );
 }
+

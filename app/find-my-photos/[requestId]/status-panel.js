@@ -234,7 +234,7 @@ export default function StatusPanel({ requestId }) {
             {data.images.map((item, index) => (
               <li key={item.publicId} className="fmp-photo-card">
                 <a
-                  className="fmp-photo-media"
+                  className="fmp-photo-media watermark-surface"
                   href={item.secureUrl}
                   target="_blank"
                   rel="noreferrer"
@@ -244,6 +244,7 @@ export default function StatusPanel({ requestId }) {
                     src={item.thumbUrl || item.secureUrl}
                     alt={`Matched wedding photo ${index + 1}`}
                     loading="lazy"
+                    decoding="async"
                   />
                   <span className="fmp-photo-chip">Photo {index + 1}</span>
                 </a>
