@@ -1,5 +1,5 @@
 import "./globals.css";
-import { Cormorant_Garamond, Plus_Jakarta_Sans } from "next/font/google";
+import { Cormorant_Garamond, Great_Vibes, Plus_Jakarta_Sans } from "next/font/google";
 
 const heading = Cormorant_Garamond({
   subsets: ["latin"],
@@ -11,6 +11,12 @@ const body = Plus_Jakarta_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   variable: "--font-body"
+});
+
+const script = Great_Vibes({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-script"
 });
 
 export const metadata = {
@@ -26,7 +32,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${heading.variable} ${body.variable}`}>
+    <html lang="en" className={`${heading.variable} ${body.variable} ${script.variable}`}>
       <body>{children}</body>
     </html>
   );

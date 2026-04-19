@@ -118,12 +118,27 @@ h1 {
   gap: 0.45rem;
 }
 
-h1 span {
+.hero-title {
+  gap: 0.3rem;
+}
+
+.hero-first-names {
+  font-family: var(--font-script), "Great Vibes", cursive;
+  font-size: clamp(2.25rem, 6vw, 5.1rem);
+  line-height: 0.94;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  color: #626a3f;
+  text-transform: none;
+}
+
+.hero-surnames {
   text-transform: uppercase;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.19em;
   font-family: var(--font-body), sans-serif;
-  font-size: 0.68rem;
+  font-size: clamp(0.72rem, 1.25vw, 0.92rem);
   color: #636744;
+  display: block;
 }
 
 .hero-meta {

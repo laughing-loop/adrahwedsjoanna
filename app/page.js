@@ -42,10 +42,9 @@ export default function HomePage() {
           priority
         />
         <p className="lead">Together with our families, invite you to our wedding</p>
-        <h1>
-          NYOMEDZI FIATI Joanna
-          <span>and</span>
-          ADRAH Innocent
+        <h1 className="hero-title">
+          <span className="hero-first-names">Innocent &amp; Joanna</span>
+          <span className="hero-surnames">ADRAH &amp; NYOMEDZI FIATI</span>
         </h1>
         <p className="hero-meta">30 May 2026 | 1:00 PM</p>
         <ShareInviteButton />
