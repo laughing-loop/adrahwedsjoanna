@@ -119,14 +119,6 @@ export async function GET(request) {
       });
     }
 
-    if (selfieTags.has(findMyPhotosTags.REQUEST_TAG_PROCESSING)) {
-      return NextResponse.json({
-        status: "matching",
-        message: "Your selfie is being compared against wedding photos now.",
-        ...timing
-      });
-    }
-
     if (
       selfieTags.has(findMyPhotosTags.REQUEST_TAG_READY) ||
       selfieTags.has(findMyPhotosTags.REQUEST_TAG_PENDING)
@@ -155,6 +147,14 @@ export async function GET(request) {
         message: "Your request is marked complete. Matches should appear shortly.",
         ...timing,
         images: []
+      });
+    }
+
+    if (selfieTags.has(findMyPhotosTags.REQUEST_TAG_PROCESSING)) {
+      return NextResponse.json({
+        status: "matching",
+        message: "Your selfie is being compared against wedding photos now.",
+        ...timing
       });
     }
 
