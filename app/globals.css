@@ -838,6 +838,113 @@ a {
   color: #2f5d34;
 }
 
+.fmp-gallery-wrap {
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.fmp-gallery-head {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.fmp-gallery-head h2 {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.7vw, 1.8rem);
+}
+
+.fmp-gallery-head p {
+  margin: 0;
+}
+
+.fmp-gallery-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.7rem;
+}
+
+.fmp-photo-card {
+  border: 1px solid #dfe2c6;
+  background: #fff;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto auto;
+  box-shadow: 0 10px 18px rgba(88, 96, 57, 0.09);
+}
+
+.fmp-photo-media {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  background: #f2f4e4;
+}
+
+.fmp-photo-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 220ms ease;
+}
+
+.fmp-photo-card:hover .fmp-photo-media img,
+.fmp-photo-card:focus-within .fmp-photo-media img {
+  transform: scale(1.04);
+}
+
+.fmp-photo-chip {
+  position: absolute;
+  left: 0.45rem;
+  top: 0.45rem;
+  border: 1px solid rgba(116, 123, 44, 0.75);
+  background: rgba(255, 255, 255, 0.88);
+  color: #61673f;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.45rem;
+}
+
+.fmp-photo-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
+  padding: 0.52rem 0.58rem 0.62rem;
+  border-top: 1px solid #e5e7d4;
+}
+
+.fmp-photo-name {
+  font-size: 0.77rem;
+  color: #585f39;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fmp-photo-foot a {
+  border: 1px solid #b0b67e;
+  text-decoration: none;
+  font-size: 0.76rem;
+  letter-spacing: 0.03em;
+  padding: 0.22rem 0.48rem;
+  color: #626841;
+  transition: background 180ms ease, color 180ms ease, border-color 180ms ease;
+}
+
+.fmp-photo-foot a:hover {
+  background: #747b2c;
+  border-color: #747b2c;
+  color: #fffef9;
+}
+
 @keyframes rise {
   from {
     opacity: 0;
@@ -947,6 +1054,15 @@ a {
   .fmp-status-panel {
     padding: 0.75rem;
   }
+
+  .fmp-gallery-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .fmp-photo-foot {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 @media (max-width: 520px) {
@@ -961,5 +1077,9 @@ a {
 
   .wizard-panel h2 {
     font-size: 1.18rem;
+  }
+
+  .fmp-gallery-grid {
+    grid-template-columns: 1fr;
   }
 }

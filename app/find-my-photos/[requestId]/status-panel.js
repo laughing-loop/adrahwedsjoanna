@@ -223,15 +223,36 @@ export default function StatusPanel({ requestId }) {
           </p>
         ) : null}
 
-        <div className="upload-results">
-          <h2>Your Matched Photos ({data.images.length})</h2>
-          <ul className="results-grid">
-            {data.images.map((item) => (
-              <li key={item.publicId}>
-                <img src={item.thumbUrl || item.secureUrl} alt={item.publicId} loading="lazy" />
-                <a href={item.secureUrl} target="_blank" rel="noreferrer">
-                  Open Full Image
+        <div className="fmp-gallery-wrap">
+          <div className="fmp-gallery-head">
+            <h2>Your Matched Photos ({data.images.length})</h2>
+            <p className="feature-note">
+              Tap any photo card to open the full-resolution image in a new tab.
+            </p>
+          </div>
+          <ul className="fmp-gallery-grid">
+            {data.images.map((item, index) => (
+              <li key={item.publicId} className="fmp-photo-card">
+                <a
+                  className="fmp-photo-media"
+                  href={item.secureUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={`Open matched photo ${index + 1}`}
+                >
+                  <img
+                    src={item.thumbUrl || item.secureUrl}
+                    alt={`Matched wedding photo ${index + 1}`}
+                    loading="lazy"
+                  />
+                  <span className="fmp-photo-chip">Photo {index + 1}</span>
                 </a>
+                <div className="fmp-photo-foot">
+                  <span className="fmp-photo-name">{item.publicId?.split("/").pop() || "Photo"}</span>
+                  <a href={item.secureUrl} target="_blank" rel="noreferrer">
+                    Open
+                  </a>
+                </div>
               </li>
             ))}
           </ul>
