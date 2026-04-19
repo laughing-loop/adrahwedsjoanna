@@ -38,10 +38,10 @@ body {
   position: absolute;
   width: min(480px, 62vw);
   height: auto;
-  opacity: 0.06;
+  opacity: 0.16;
   pointer-events: none;
   z-index: -2;
-  filter: saturate(70%);
+  filter: sepia(62%) hue-rotate(24deg) saturate(145%) brightness(0.75);
 }
 
 .bg-element-top {
@@ -517,6 +517,14 @@ a {
   color: #515632;
 }
 
+.reception-tagline {
+  margin-top: 0.55rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  font-size: 0.9rem;
+  color: #5d6340;
+}
+
 .site-footer {
   text-align: center;
   border-bottom: 1px solid var(--line);
@@ -538,6 +546,14 @@ a {
   width: min(640px, 100%);
   display: grid;
   gap: 0.72rem;
+}
+
+.site-footer-monogram {
+  width: clamp(72px, 11vw, 104px);
+  height: auto;
+  margin: 0.65rem auto 0;
+  opacity: 0.92;
+  display: block;
 }
 
 .site-footer-scripture p {
@@ -1285,7 +1301,7 @@ a {
 
   .bg-element {
     width: min(360px, 80vw);
-    opacity: 0.045;
+    opacity: 0.11;
   }
 
   .bg-element-top {

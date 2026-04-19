@@ -6,6 +6,7 @@ import galleryTwo from "../images/Whisk_8199943798532ebbade41a18f03b6eb5eg.png";
 import galleryThree from "../images/Whisk_8199943798532ebbade41a18f03b6eb5egq.png";
 import galleryFour from "../images/Whisk_969957481a18e29901b4b58abbf802fbdr.jpeg";
 import elementBg from "../images/A-J_ELEMENT_BACKGROUND-02.svg";
+import originalMonogram from "../images/A-J_Monogram-01.svg";
 import GalleryLightbox from "./shared/gallery-lightbox";
 import ShareInviteButton from "./shared/share-invite-button";
 
@@ -152,11 +153,17 @@ export default function HomePage() {
 
       <section className="block reception">
         <h2>Reception to Follow</h2>
-        <p>@ ATIWA ONE LODGE</p>
+        <p>Reception Venue: ATIWA ONE LODGE</p>
+        <p className="reception-tagline">An evening of joy, music, and celebration awaits.</p>
       </section>
 
       <footer className="site-footer block watermark-surface">
         <p className="site-footer-est">Est. 2026</p>
+        <Image
+          className="site-footer-monogram"
+          src={originalMonogram}
+          alt="Joanna and Innocent monogram"
+        />
         <blockquote className="site-footer-scripture">
           <p>
             Then Jehovah God said: &quot;It is not good for the man to continue to be alone.
